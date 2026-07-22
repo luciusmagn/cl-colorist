@@ -1,0 +1,79 @@
+#+title: cl-colorist
+
+=cl-colorist= is a small, dependency-free Common Lisp library for styling
+terminal text.  It supports the named ANSI 16-color palette, xterm-256 colors
+with explicit basic-color fallbacks, common SGR attributes, terminal capability
+detection, and ANSI-aware string handling.
+
+* Use
+
+Basic colors are keywords, so one-shot styling stays concise:
+
+#+begin_src lisp
+(colorist:paint "ready" :foreground :green :bold t)
+#+end_src
+
+An indexed color retains a basic fallback for terminals that do not support the
+xterm palette:
+
+#+begin_src lisp
+(defparameter *accent*
+  (colorist:indexed-color 114 :fallback :green))
+
+(defparameter *status-style*
+  (colorist:make-style :foreground *accent*
+                       :background (colorist:indexed-color 236
+                                                             :fallback :black)
+                       :bold t))
+
+(colorist:colorize " indexed when possible " *status-style*)
+#+end_src
+
+Reusable styles support foreground and background colors together with =:bold=,
+=:faint=, =:italic=, =:underline=, and =:reverse=.  =colorist:sgr-sequence= and
+=colorist:reset-sequence= expose the raw SGR sequences when a caller needs to
+manage presentation state itself.
+
+The 16 basic names are:
+
+#+begin_src lisp
+:black          :red          :green          :yellow
+:blue           :magenta      :cyan           :white
+:bright-black   :bright-red   :bright-green   :bright-yellow
+:bright-blue    :bright-magenta :bright-cyan  :bright-white
+#+end_src
+
+* Capability selection
+
+=colorist:terminal-color-level= returns one of =:none=, =:basic=, or =:indexed=.
+It honors the presence of =NO_COLOR= and =TERM=dumb=, recognizes
+=TERM=*-256color=, and treats true-color =COLORTERM= values as indexed-capable.
+The library emits no true-color sequences.
+
+Bind =colorist:*color-level*= to override detection for a dynamic scope:
+
+#+begin_src lisp
+(let ((colorist:*color-level* :none))
+  (colorist:paint "always plain here" :foreground :red))
+#+end_src
+
+An explicit =:level= argument to rendering functions takes precedence over the
+dynamic override.
+
+* ANSI-aware text
+
+=colorist:strip-ansi= removes CSI, OSC, other control-string, C1, and ordinary
+escape sequences.  =colorist:visible-length= counts Lisp characters while
+treating those sequences as zero-width.  It deliberately does not guess Unicode
+terminal cell widths; terminal UI libraries can apply their own grapheme and
+cell-width policy to the stripped text.  =colorist:ansi-control-end= exposes the
+same parser to renderers that must retain controls while slicing visible text.
+
+* Test
+
+Load the system definition and run its ASDF test operation:
+
+#+begin_src lisp
+(asdf:load-asd #P"/path/to/cl-colorist/cl-colorist.asd")
+(asdf:test-system :cl-colorist)
+#+end_src
