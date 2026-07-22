@@ -298,16 +298,23 @@ unchanged when styling is disabled or STYLE has no effective attributes."
   "Return the index after a CSI body in STRING beginning at START."
   (loop for index from start below (length string)
         for code = (char-code (char string index))
+        when (member code '(#x18 #x1a))
+          return (1+ index)
         when (<= #x40 code #x7e)
           return (1+ index)
         finally (return (length string))))
 
-(defun colorist--skip-control-string (string start)
-  "Return the index after a BEL- or ST-terminated control string."
+(defun colorist--skip-control-string (string start bel-terminated-p)
+  "Return the index after a canceled or ST-terminated control string.
+
+When BEL-TERMINATED-P is true, BEL also terminates the string as permitted for
+an operating-system command."
   (loop for index from start below (length string)
         for character = (char string index)
         for code = (char-code character)
-        when (= code 7)
+        when (member code '(#x18 #x1a))
+          return (1+ index)
+        when (and bel-terminated-p (= code 7))
           return (1+ index)
         when (= code #x9c)
           return (1+ index)
@@ -325,8 +332,10 @@ unchanged when styling is disabled or STYLE has no effective attributes."
         (case (char string next)
           (#\[
            (colorist--skip-csi string (1+ next)))
-          ((#\] #\P #\X #\^ #\_)
-           (colorist--skip-control-string string (1+ next)))
+          (#\]
+           (colorist--skip-control-string string (1+ next) t))
+          ((#\P #\X #\^ #\_)
+           (colorist--skip-control-string string (1+ next) nil))
           (otherwise
            (loop with index = next
                  while (and (< index (length string))
@@ -347,8 +356,10 @@ unchanged when styling is disabled or STYLE has no effective attributes."
            (colorist--skip-escape string index))
           ((= code #x9b)
            (colorist--skip-csi string (1+ index)))
-          ((member code '(#x90 #x98 #x9d #x9e #x9f))
-           (colorist--skip-control-string string (1+ index)))
+          ((= code #x9d)
+           (colorist--skip-control-string string (1+ index) t))
+          ((member code '(#x90 #x98 #x9e #x9f))
+           (colorist--skip-control-string string (1+ index) nil))
           ((<= #x80 code #x9f)
            (1+ index))
           (t

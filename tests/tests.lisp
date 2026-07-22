@@ -135,6 +135,13 @@
          (osc (format nil "left~c]0;title~cright" escape (code-char 7)))
          (st-osc (format nil "left~c]8;;https://example.com~c\\link~c]8;;~c\\right"
                          escape escape escape escape))
+         (dcs-with-bel
+           (format nil "left~cPqhidden~cstill-hidden~c\\right"
+                   escape (code-char 7) escape))
+         (canceled-osc
+           (format nil "left~c]title~cvisible" escape (code-char #x18)))
+         (canceled-csi
+           (format nil "left~c[31~cvisible" escape (code-char #x1a)))
          (charset (format nil "a~c(Bb" escape))
          (c1-csi (format nil "a~c31mb" (code-char #x9b))))
     (check-equal "aredb" (strip-ansi styled))
@@ -143,6 +150,10 @@
     (check-equal nil (ansi-control-end styled 0))
     (check-equal "leftright" (strip-ansi osc))
     (check-equal "leftlinkright" (strip-ansi st-osc))
+    (check-equal "leftright" (strip-ansi dcs-with-bel))
+    (check-equal "leftvisible" (strip-ansi canceled-osc))
+    (check-equal "leftvisible" (strip-ansi canceled-csi))
+    (check-equal 11 (visible-length canceled-osc))
     (check-equal "ab" (strip-ansi charset))
     (check-equal "ab" (strip-ansi c1-csi))
     (check-equal "ok" (strip-ansi (format nil "ok~c[31" escape)))
