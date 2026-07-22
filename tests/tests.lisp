@@ -5,6 +5,13 @@
 (defvar *check-count* 0
   "Number of assertions made by the current test run.")
 
+(defparameter *compiled-style*
+  #.(make-style
+     :foreground (indexed-color 114 :fallback :green)
+     :background (indexed-color 236 :fallback :black)
+     :bold t)
+  "A read-time STYLE that requires a load form when this file is compiled.")
+
 (defun check-equal (expected actual)
   "Assert that EXPECTED and ACTUAL are EQUAL."
   (incf *check-count*)
@@ -66,6 +73,8 @@
 
 (defun test-style-rendering ()
   "Check attributes, reset behavior and one-shot rendering."
+  (check-equal (escape-sequence "[1;38;5;114;48;5;236m")
+               (sgr-sequence *compiled-style* :level :indexed))
   (check-equal (escape-sequence "[1;3;4;7;96;40m")
                (sgr-sequence (make-style :foreground :bright-cyan
                                          :background :black

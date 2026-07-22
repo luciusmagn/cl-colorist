@@ -110,6 +110,19 @@ rendered for a basic terminal."
   (value    :white :type (or basic-color-name (integer 0 255)) :read-only t)
   (fallback nil :type (or null basic-color-name) :read-only t))
 
+(defun colorist--color-load-form (color)
+  "Return a form that reconstructs COLOR through its validated constructor."
+  (when color
+    (if (eq (color-kind color) :basic)
+        `(basic-color ',(color-value color))
+        `(indexed-color ,(color-value color)
+                        :fallback ',(color-fallback color)))))
+
+(defmethod make-load-form ((color color) &optional environment)
+  "Return a portable creation form for immutable COLOR."
+  (declare (ignore environment))
+  (values (colorist--color-load-form color) nil))
+
 (defun basic-color-names ()
   "Return a fresh list of all basic ANSI color names."
   (copy-list +basic-color-names+))
@@ -201,6 +214,20 @@ FALLBACK may be a basic color name or the result of BASIC-COLOR."
   (italic-p   nil :type boolean :read-only t)
   (underline-p nil :type boolean :read-only t)
   (reverse-p  nil :type boolean :read-only t))
+
+(defmethod make-load-form ((style style) &optional environment)
+  "Return a portable creation form for immutable STYLE."
+  (declare (ignore environment))
+  (values
+   `(make-style
+     :foreground ,(colorist--color-load-form (style-foreground style))
+     :background ,(colorist--color-load-form (style-background style))
+     :bold ,(style-bold-p style)
+     :faint ,(style-faint-p style)
+     :italic ,(style-italic-p style)
+     :underline ,(style-underline-p style)
+     :reverse ,(style-reverse-p style))
+   nil))
 
 (defun make-style (&key foreground background bold faint italic underline reverse)
   "Return a validated STYLE from colors and text attribute flags.
