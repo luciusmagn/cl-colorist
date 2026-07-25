@@ -1,6 +1,7 @@
 (asdf:defsystem #:cl-colorist
   :description "Small, capability-aware ANSI text styling."
   :author "Lukáš Hozda"
+  :license "ISC"
   :version "0.1.0"
   :serial t
   :components ((:module "source"
