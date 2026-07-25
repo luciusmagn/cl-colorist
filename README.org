@@ -77,3 +77,5 @@ Load the system definition and run its ASDF test operation:
 (asdf:load-asd #P"/path/to/cl-colorist/cl-colorist.asd")
 (asdf:test-system :cl-colorist)
 #+end_src
+
+Part of the [[https://www.lambda-symbolics.com/libraries][Lambda Symbolics library shelf]].
